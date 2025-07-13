@@ -1,37 +1,65 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import CountriesList from './components/CountriesList';
+import { useEffect, useState } from 'react'
+
+import axios from 'axios'
+
+import CountryDetails from './components/CountryDetails'
+import CountryList from './components/CountryList'
+
 const App = () => {
-  const [value, setValue] = useState('');
-  const [countriesList, setCountriesList] = useState([]);
+  const [countries, setCountries] = useState([])
+  const [filter, setFilter] = useState('')
+  const [selectedCountry, setSelectedCountry] = useState(null)
+
   useEffect(() => {
-    // `https://studies.cs.helsinki.fi/restcountries/api/all`
     axios
-      .get(`https://restcountries.com/v3.1/all`)
-      .then((r) => {
-        setCountriesList(r.data);
+      .get('https://studies.cs.helsinki.fi/restcountries/api/all')
+      .then((response) => {
+        setCountries(response.data)
       })
-      .catch((err) => console.log(err));
-  }, []);
-  const changeHandler = (e) => {
-    setValue(e.target.value);
-  };
-  const handleShow = (c) => {
-    setValue(c.name.common);
-  };
+      .catch((error) => {
+        console.log(error)
+      })
+  }, [])
+
+  const handleFilterChange = (event) => setFilter(event.target.value)
+
+  const handleShowClick = (country) => setSelectedCountry(country)
+
+  const countriesToShow = filter
+    ? countries.filter((country) =>
+        country.name.common.toLowerCase().includes(filter.toLowerCase())
+      )
+    : []
+
   return (
-    <div className="App">
-      <label>Find countries:</label>
-      <input type="text" value={value} onChange={changeHandler} />
-      <CountriesList
-        countries={countriesList}
-        countryFilter={value}
-        handleShow={handleShow}
-      />
-    </div>
-  );
-};
+    <>
+      <main>
+        <label>
+          Find countries:
+          <input type="text" value={filter} onChange={handleFilterChange} />
+        </label>
 
-export default App;
+        {countriesToShow.length > 10 ? (
+          <p>Too many matches, specify another filter</p>
+        ) : countriesToShow.length === 1 ? (
+          <CountryDetails country={countriesToShow[0]} />
+        ) : (
+          <CountryList
+            countriesToShow={countriesToShow}
+            handleShowClick={handleShowClick}
+          />
+        )}
+        {selectedCountry && <CountryDetails country={selectedCountry} />}
+      </main>
 
-//bash: REACT_APP_API_KEY={API CODE} npm start
+      <section>
+        <p>
+          Filter: {filter} <br />
+          Count: {countriesToShow.length} <br />
+        </p>
+      </section>
+    </>
+  )
+}
+
+export default App
